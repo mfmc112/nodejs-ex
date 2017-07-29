@@ -4,14 +4,14 @@ var express = require('express'),
     app     = express(),
     eps     = require('ejs'),
     morgan  = require('morgan');
-    
+
 Object.assign=require('object-assign')
 
 app.engine('html', require('ejs').renderFile);
 app.use(morgan('combined'))
 
 var port = process.env.PORT || process.env.OPENSHIFT_NODEJS_PORT || 8080,
-    ip   = process.env.IP   || process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0',
+    ip   = process.env.IP   || process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1',
     mongoURL = process.env.OPENSHIFT_MONGODB_DB_URL || process.env.MONGO_URL,
     mongoURLLabel = "";
 
@@ -58,6 +58,10 @@ var initDb = function(callback) {
   });
 };
 
+
+app.get('/api/commands', function(req, res) {
+  res.send('3');
+});
 // my description here
 app.get('/', function (req, res) {
   // try to initialize the db on every request if it's not already
@@ -104,5 +108,21 @@ initDb(function(err){
 
 app.listen(port, ip);
 console.log('Server running on http://%s:%s', ip, port);
+
+var socketServer = require('http').createServer(app);
+var io = require('socket.io')(socketServer, {
+  path: '/test',
+  serveClient: false,
+  // below are engine.IO options
+  pingInterval: 10000,
+  pingTimeout: 5000,
+  cookie: false
+});
+io.on('connection', function(client){
+  client.on('event', function(data){});
+  client.on('disconnect', function(){});
+});
+socketServer.listen(3000);
+
 
 module.exports = app ;
